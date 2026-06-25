@@ -3,10 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import type { MenuItem } from "@/data/menu";
+import type { PublicDish } from "@/lib/types";
 
 interface DishDetailProps {
-  item: MenuItem;
+  item: PublicDish;
 }
 
 export default function DishDetail({ item }: DishDetailProps) {

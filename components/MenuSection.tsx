@@ -1,24 +1,38 @@
 import Image from "next/image";
 import Link from "next/link";
-import { menuCategories } from "@/data/menu";
+import { getPublicMenu } from "@/lib/menu-service";
+import type { PageSection } from "@/lib/types";
 import ScrollReveal from "@/components/ScrollReveal";
 
-export default function MenuSection() {
+export const revalidate = 60;
+
+interface MenuSectionProps {
+  section: PageSection;
+}
+
+export default async function MenuSection({ section }: MenuSectionProps) {
+  const menuCategories = await getPublicMenu();
+
   return (
-    <section id="menu" className="bg-stone-900 py-16 sm:py-24 lg:py-32">
+    <section id={section.id} className="bg-stone-900 py-16 sm:py-24 lg:py-32">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <ScrollReveal>
           <div className="text-center">
-            <p className="text-xs tracking-[0.25em] text-amber-400 uppercase sm:text-sm sm:tracking-[0.3em]">
-              Nasze menu
-            </p>
-            <h2 className="mt-3 font-serif text-3xl tracking-wide text-white sm:mt-4 sm:text-4xl md:text-5xl">
-              Smaki Italii
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-sm text-stone-400 sm:mt-6 sm:text-base md:text-lg">
-              Odkryj nasze dania — od klasycznych przystawek po autorskie makarony
-              i wyśmienite desery.
-            </p>
+            {section.subtitle && (
+              <p className="text-xs tracking-[0.25em] text-amber-400 uppercase sm:text-sm sm:tracking-[0.3em]">
+                {section.subtitle}
+              </p>
+            )}
+            {section.title && (
+              <h2 className="mt-3 font-serif text-3xl tracking-wide text-white sm:mt-4 sm:text-4xl md:text-5xl">
+                {section.title}
+              </h2>
+            )}
+            {section.content && (
+              <p className="mx-auto mt-4 max-w-2xl text-sm text-stone-400 sm:mt-6 sm:text-base md:text-lg">
+                {section.content}
+              </p>
+            )}
           </div>
         </ScrollReveal>
 

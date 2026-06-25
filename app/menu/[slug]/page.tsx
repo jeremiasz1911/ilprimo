@@ -1,20 +1,26 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Header from "@/components/Header";
+import SiteHeader from "@/components/SiteHeader";
 import DishDetail from "@/components/DishDetail";
-import { getAllMenuSlugs, getMenuItemBySlug } from "@/data/menu";
+import {
+  getAllPublicDishSlugs,
+  getPublicDishBySlug,
+} from "@/lib/menu-service";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
+export const revalidate = 60;
+
 export async function generateStaticParams() {
-  return getAllMenuSlugs().map((slug) => ({ slug }));
+  const slugs = await getAllPublicDishSlugs();
+  return slugs.map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const item = getMenuItemBySlug(slug);
+  const item = await getPublicDishBySlug(slug);
 
   if (!item) {
     return { title: "Nie znaleziono | IL PRIMO" };
@@ -28,7 +34,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function DishPage({ params }: PageProps) {
   const { slug } = await params;
-  const item = getMenuItemBySlug(slug);
+  const item = await getPublicDishBySlug(slug);
 
   if (!item) {
     notFound();
@@ -36,7 +42,7 @@ export default async function DishPage({ params }: PageProps) {
 
   return (
     <>
-      <Header />
+      <SiteHeader />
       <main>
         <DishDetail item={item} />
       </main>

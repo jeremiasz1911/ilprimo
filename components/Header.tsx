@@ -2,16 +2,16 @@
 
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { localImages } from "@/data/menu";
+import type { NavLink } from "@/lib/types";
+import { DEFAULT_LOGO } from "@/lib/constants";
 
-const navLinks = [
-  { href: "/#hero", label: "STRONA GŁÓWNA" },
-  { href: "/#o-nas", label: "O NAS" },
-  { href: "/#menu", label: "MENU" },
-  { href: "/#kontakt", label: "KONTAKT" },
-];
+interface HeaderProps {
+  navLinks: NavLink[];
+  logo: string;
+  logoAlt: string;
+}
 
-export default function Header() {
+export default function Header({ navLinks, logo, logoAlt }: HeaderProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -23,6 +23,8 @@ export default function Header() {
   }, []);
 
   const handleNavClick = () => setIsOpen(false);
+  const logoSrc = logo || DEFAULT_LOGO;
+  const homeHref = navLinks.find((link) => link.href === "/")?.href ?? "/#hero";
 
   return (
     <header
@@ -37,7 +39,7 @@ export default function Header() {
           scrolled ? "h-14 sm:h-16" : "h-16 sm:h-20"
         }`}
       >
-        <a href="/#hero" className="shrink-0">
+        <a href={homeHref} className="shrink-0">
           <div
             className={`relative transition-all duration-700 ${
               scrolled
@@ -46,8 +48,8 @@ export default function Header() {
             }`}
           >
             <Image
-              src={localImages.logo}
-              alt="IL PRIMO Ristorante Italiano"
+              src={logoSrc}
+              alt={logoAlt}
               fill
               sizes="(max-width: 640px) 160px, 192px"
               className="object-contain object-center"
@@ -59,7 +61,7 @@ export default function Header() {
         <nav className="hidden items-center gap-4 lg:flex lg:gap-8">
           {navLinks.map((link) => (
             <a
-              key={link.href}
+              key={link.href + link.label}
               href={link.href}
               className="text-[0.65rem] tracking-[0.15em] text-white/90 transition-colors duration-500 hover:text-amber-400 xl:text-xs xl:tracking-[0.2em]"
             >
@@ -101,7 +103,7 @@ export default function Header() {
         <div className="flex flex-col px-4 py-4 sm:px-6">
           {navLinks.map((link) => (
             <a
-              key={link.href}
+              key={link.href + link.label}
               href={link.href}
               onClick={handleNavClick}
               className="border-b border-white/5 py-3.5 text-sm tracking-[0.2em] text-white/90 transition-colors duration-500 hover:text-amber-400"
