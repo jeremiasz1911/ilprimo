@@ -6,7 +6,8 @@ import {
   verifyCredentials,
 } from "@/lib/auth";
 import {
-  checkAndIncrementLoginAttempts,
+  getLoginBlockStatus,
+  recordFailedLoginAttempt,
   resetLoginAttempts,
 } from "@/lib/admin-rate-limit";
 
@@ -22,7 +23,6 @@ export async function POST(request: NextRequest) {
       website?: string; // honeypot
     };
 
-    // If bot filled hidden field, fail fast with generic error.
     if (website) {
       await sleep(350);
       return NextResponse.json({ error: "Błąd logowania." }, { status: 400 });
@@ -35,18 +35,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const rate = await checkAndIncrementLoginAttempts(request);
-    if (!rate.allowed) {
+    const blockStatus = await getLoginBlockStatus(request);
+    if (!blockStatus.allowed) {
       await sleep(350);
       const response = NextResponse.json(
         { error: "Zbyt wiele prób logowania. Spróbuj ponownie później." },
         { status: 429 },
       );
-      response.headers.set("Retry-After", String(rate.retryAfterSeconds));
+      response.headers.set("Retry-After", String(blockStatus.retryAfterSeconds));
       return response;
     }
 
     if (!verifyCredentials(username, password)) {
+      await recordFailedLoginAttempt(request);
       await sleep(350);
       return NextResponse.json(
         { error: "Nieprawidłowy login lub hasło." },
@@ -59,7 +60,8 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({ success: true });
     response.cookies.set(ADMIN_COOKIE, token, getSessionCookieOptions());
     return response;
-  } catch {
+  } catch (error) {
+    console.error("[auth/login] unexpected error:", error);
     return NextResponse.json({ error: "Błąd logowania." }, { status: 500 });
   }
 }

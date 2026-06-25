@@ -1,13 +1,14 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import type { NextRequest } from "next/server";
+import { normalizeEnvValue } from "@/lib/env-utils";
 
 export const ADMIN_COOKIE = "ilprimo_admin_session";
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
 
 function getSessionSecret(): string {
   return (
-    process.env.ADMIN_SESSION_SECRET ||
-    `${process.env.ADMIN_PASSWORD || ""}-ilprimo-session`
+    normalizeEnvValue(process.env.ADMIN_SESSION_SECRET) ||
+    `${normalizeEnvValue(process.env.ADMIN_PASSWORD)}-ilprimo-session`
   );
 }
 
@@ -56,8 +57,8 @@ export function verifyCredentials(
   username: string,
   password: string,
 ): boolean {
-  const adminUsername = process.env.ADMIN_USERNAME;
-  const adminPassword = process.env.ADMIN_PASSWORD;
+  const adminUsername = normalizeEnvValue(process.env.ADMIN_USERNAME);
+  const adminPassword = normalizeEnvValue(process.env.ADMIN_PASSWORD);
   if (!adminUsername || !adminPassword) return false;
   return username === adminUsername && password === adminPassword;
 }

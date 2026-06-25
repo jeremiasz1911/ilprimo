@@ -20,70 +20,79 @@ function hashKey(value: string) {
   return createHash("sha256").update(`${secret}|${value}`).digest("hex");
 }
 
-export async function checkAndIncrementLoginAttempts(
-  request: Request,
-): Promise<{ allowed: true } | { allowed: false; retryAfterSeconds: number }> {
+function getAttemptRef(request: Request) {
   const ip = getClientIp(request);
   const key = hashKey(ip);
-  const ref = getAdminDb().collection(COLLECTION).doc(key);
-  const now = Date.now();
+  return getAdminDb().collection(COLLECTION).doc(key);
+}
 
-  return await getAdminDb().runTransaction(async (tx) => {
-    const snap = await tx.get(ref);
-    const data = snap.exists
-      ? (snap.data() as {
-          firstAttemptAt?: number;
-          count?: number;
-          blockedUntil?: number;
-        })
-      : {};
+export async function getLoginBlockStatus(
+  request: Request,
+): Promise<{ allowed: true } | { allowed: false; retryAfterSeconds: number }> {
+  try {
+    const ref = getAttemptRef(request);
+    const snap = await ref.get();
+    if (!snap.exists) return { allowed: true };
 
+    const data = snap.data() as { blockedUntil?: number };
     const blockedUntil = Number(data.blockedUntil) || 0;
+    const now = Date.now();
+
     if (blockedUntil > now) {
       return {
-        allowed: false as const,
+        allowed: false,
         retryAfterSeconds: Math.ceil((blockedUntil - now) / 1000),
       };
     }
 
-    const firstAttemptAt = Number(data.firstAttemptAt) || now;
-    const withinWindow = now - firstAttemptAt <= WINDOW_MS;
-    const count = withinWindow ? Number(data.count) || 0 : 0;
-    const nextCount = count + 1;
-
-    const shouldBlock = nextCount >= MAX_ATTEMPTS;
-    const nextBlockedUntil = shouldBlock ? now + BLOCK_MS : 0;
-
-    tx.set(
-      ref,
-      {
-        firstAttemptAt: withinWindow ? firstAttemptAt : now,
-        count: nextCount,
-        blockedUntil: nextBlockedUntil || undefined,
-        updatedAt: now,
-      },
-      { merge: true },
-    );
-
-    if (shouldBlock) {
-      return {
-        allowed: false as const,
-        retryAfterSeconds: Math.ceil(BLOCK_MS / 1000),
-      };
-    }
-
-    return { allowed: true as const };
-  });
-}
-
-export async function resetLoginAttempts(request: Request): Promise<void> {
-  const ip = getClientIp(request);
-  const key = hashKey(ip);
-  const ref = getAdminDb().collection(COLLECTION).doc(key);
-  try {
-    await ref.delete();
-  } catch {
-    // ignore
+    return { allowed: true };
+  } catch (error) {
+    console.error("[admin-rate-limit] block status check failed:", error);
+    return { allowed: true };
   }
 }
 
+export async function recordFailedLoginAttempt(request: Request): Promise<void> {
+  try {
+    const ref = getAttemptRef(request);
+    const now = Date.now();
+
+    await getAdminDb().runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      const data = snap.exists
+        ? (snap.data() as {
+            firstAttemptAt?: number;
+            count?: number;
+            blockedUntil?: number;
+          })
+        : {};
+
+      const firstAttemptAt = Number(data.firstAttemptAt) || now;
+      const withinWindow = now - firstAttemptAt <= WINDOW_MS;
+      const count = withinWindow ? Number(data.count) || 0 : 0;
+      const nextCount = count + 1;
+      const shouldBlock = nextCount >= MAX_ATTEMPTS;
+
+      tx.set(
+        ref,
+        {
+          firstAttemptAt: withinWindow ? firstAttemptAt : now,
+          count: nextCount,
+          blockedUntil: shouldBlock ? now + BLOCK_MS : undefined,
+          updatedAt: now,
+        },
+        { merge: true },
+      );
+    });
+  } catch (error) {
+    console.error("[admin-rate-limit] failed to record attempt:", error);
+  }
+}
+
+export async function resetLoginAttempts(request: Request): Promise<void> {
+  try {
+    await getAttemptRef(request).delete();
+  } catch (error) {
+    console.error("[admin-rate-limit] failed to reset attempts:", error);
+  }
+}

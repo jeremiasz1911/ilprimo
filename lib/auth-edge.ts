@@ -1,11 +1,12 @@
 import type { NextRequest } from "next/server";
+import { normalizeEnvValue } from "@/lib/env-utils";
 
 const ADMIN_COOKIE = "ilprimo_admin_session";
 
 function getSessionSecret(): string {
   return (
-    process.env.ADMIN_SESSION_SECRET ||
-    `${process.env.ADMIN_PASSWORD || ""}-ilprimo-session`
+    normalizeEnvValue(process.env.ADMIN_SESSION_SECRET) ||
+    `${normalizeEnvValue(process.env.ADMIN_PASSWORD)}-ilprimo-session`
   );
 }
 
