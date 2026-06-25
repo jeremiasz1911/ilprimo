@@ -2,21 +2,13 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import SiteHeader from "@/components/SiteHeader";
 import DishDetail from "@/components/DishDetail";
-import {
-  getAllPublicDishSlugs,
-  getPublicDishBySlug,
-} from "@/lib/menu-service";
+import { getPublicDishBySlug } from "@/lib/menu-service";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-export const revalidate = 60;
-
-export async function generateStaticParams() {
-  const slugs = await getAllPublicDishSlugs();
-  return slugs.map((slug) => ({ slug }));
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;

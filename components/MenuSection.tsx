@@ -4,8 +4,6 @@ import { getPublicMenu } from "@/lib/menu-service";
 import type { PageSection } from "@/lib/types";
 import ScrollReveal from "@/components/ScrollReveal";
 
-export const revalidate = 60;
-
 interface MenuSectionProps {
   section: PageSection;
 }

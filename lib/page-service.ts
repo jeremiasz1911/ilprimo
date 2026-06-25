@@ -122,7 +122,8 @@ export async function getAllPageSections(): Promise<PageSection[]> {
       .orderBy("order", "asc")
       .get();
     return snapshot.docs.map((doc) => mapSectionDoc(doc.id, doc.data()));
-  } catch {
+  } catch (error) {
+    console.error("[page-service] getAllPageSections failed:", error);
     return [];
   }
 }

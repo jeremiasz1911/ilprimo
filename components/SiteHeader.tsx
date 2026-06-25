@@ -4,7 +4,7 @@ import {
   getSiteSettings,
 } from "@/lib/page-service";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function SiteHeader() {
   const [navLinks, settings] = await Promise.all([
