@@ -2,6 +2,7 @@ import type { DocumentData } from "firebase-admin/firestore";
 import { menuCategories as seedMenuCategories } from "@/data/menu";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { PLACEHOLDER_DISH_IMAGE } from "@/lib/constants";
+import { decodeSlugParam, slugify } from "@/lib/slugify";
 import type { Category, Dish, PublicDish, PublicMenuCategory } from "@/lib/types";
 
 const CATEGORIES_COLLECTION = "categories";
@@ -151,40 +152,84 @@ export async function getPublicMenu(): Promise<PublicMenuCategory[]> {
 }
 
 export async function getPublicDishBySlug(
-  slug: string,
+  rawSlug: string,
 ): Promise<PublicDish | undefined> {
   try {
-    const snapshot = await getAdminDb()
-      .collection(DISHES_COLLECTION)
-      .where("slug", "==", slug)
-      .limit(1)
-      .get();
+    const decoded = decodeSlugParam(rawSlug);
+    const normalized = slugify(decoded);
+    const candidates = [...new Set([normalized, decoded, rawSlug].filter(Boolean))];
 
-    if (snapshot.empty) return undefined;
+    for (const candidate of candidates) {
+      const dish = await findDishDocBySlug(candidate);
+      if (dish) {
+        return enrichPublicDish(dish);
+      }
+    }
 
-    const doc = snapshot.docs[0];
-    const dish = mapDishDoc(doc.id, doc.data());
-    if (!dish.isAvailable) return undefined;
+    const dishes = await fetchFirestoreDishes(false);
+    const legacyMatch = dishes.find(
+      (dish) => slugify(dish.slug) === normalized || slugify(dish.name) === normalized,
+    );
 
-    const categoryDoc = await getAdminDb()
-      .collection(CATEGORIES_COLLECTION)
-      .doc(dish.categoryId)
-      .get();
-
-    if (!categoryDoc.exists) return undefined;
-
-    const category = mapCategoryDoc(categoryDoc.id, categoryDoc.data()!);
-    if (!category.isActive) return undefined;
-
-    return { ...dish, category: category.name };
+    if (!legacyMatch) return undefined;
+    return enrichPublicDish(legacyMatch);
   } catch {
     return undefined;
   }
 }
 
+async function findDishDocBySlug(slug: string): Promise<Dish | null> {
+  const snapshot = await getAdminDb()
+    .collection(DISHES_COLLECTION)
+    .where("slug", "==", slug)
+    .limit(1)
+    .get();
+
+  if (snapshot.empty) return null;
+  const doc = snapshot.docs[0];
+  return mapDishDoc(doc.id, doc.data());
+}
+
+async function enrichPublicDish(dish: Dish): Promise<PublicDish | undefined> {
+  if (!dish.isAvailable) return undefined;
+
+  const categoryDoc = await getAdminDb()
+    .collection(CATEGORIES_COLLECTION)
+    .doc(dish.categoryId)
+    .get();
+
+  if (!categoryDoc.exists) return undefined;
+
+  const category = mapCategoryDoc(categoryDoc.id, categoryDoc.data()!);
+  if (!category.isActive) return undefined;
+
+  return { ...dish, category: category.name };
+}
+
+export async function normalizeAllDishSlugs(): Promise<{ updated: number }> {
+  const dishes = await fetchFirestoreDishes(false);
+  const batch = getAdminDb().batch();
+  let updated = 0;
+
+  dishes.forEach((dish) => {
+    const nextSlug = slugify(dish.slug || dish.name);
+    if (!nextSlug || nextSlug === dish.slug) return;
+
+    const ref = getAdminDb().collection(DISHES_COLLECTION).doc(dish.id);
+    batch.update(ref, { slug: nextSlug });
+    updated += 1;
+  });
+
+  if (updated > 0) {
+    await batch.commit();
+  }
+
+  return { updated };
+}
+
 export async function getAllPublicDishSlugs(): Promise<string[]> {
   const dishes = await fetchFirestoreDishes(true);
-  return dishes.map((dish) => dish.slug);
+  return dishes.map((dish) => slugify(dish.slug));
 }
 
 export async function getAllCategories(): Promise<Category[]> {
@@ -221,10 +266,11 @@ export async function getDishById(id: string): Promise<Dish | null> {
 export async function createCategory(
   data: Omit<Category, "id"> & { id?: string },
 ): Promise<Category> {
-  const id = data.id || data.slug;
+  const slug = slugify(data.slug || data.name);
+  const id = slugify(data.id || slug);
   const payload = {
     name: data.name,
-    slug: data.slug,
+    slug,
     order: data.order,
     isActive: data.isActive !== false,
   };
@@ -236,7 +282,11 @@ export async function updateCategory(
   id: string,
   data: Partial<Omit<Category, "id">>,
 ): Promise<void> {
-  await getAdminDb().collection(CATEGORIES_COLLECTION).doc(id).update(data);
+  const payload = { ...data };
+  if (typeof payload.slug === "string") {
+    payload.slug = slugify(payload.slug);
+  }
+  await getAdminDb().collection(CATEGORIES_COLLECTION).doc(id).update(payload);
 }
 
 export async function deleteCategory(id: string): Promise<void> {
@@ -255,9 +305,10 @@ export async function deleteCategory(id: string): Promise<void> {
 export async function createDish(
   data: Omit<Dish, "id"> & { id?: string },
 ): Promise<Dish> {
-  const id = data.id || data.slug;
+  const slug = slugify(data.slug || data.name);
+  const id = slugify(data.id || slug);
   const payload = {
-    slug: data.slug,
+    slug,
     categoryId: data.categoryId,
     name: data.name,
     price: data.price,
@@ -280,7 +331,11 @@ export async function updateDish(
   id: string,
   data: Partial<Omit<Dish, "id">>,
 ): Promise<void> {
-  await getAdminDb().collection(DISHES_COLLECTION).doc(id).update(data);
+  const payload = { ...data };
+  if (typeof payload.slug === "string") {
+    payload.slug = slugify(payload.slug);
+  }
+  await getAdminDb().collection(DISHES_COLLECTION).doc(id).update(payload);
 }
 
 export async function deleteDish(id: string): Promise<void> {

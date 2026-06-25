@@ -10,7 +10,8 @@
     "lint": "eslint",
     "seed": "npx tsx scripts/seed-full.ts",
     "seed:menu": "npx tsx scripts/seed-firestore.ts",
-    "vercel:env": "npx tsx scripts/sync-vercel-env.ts"
+    "vercel:env": "npx tsx scripts/sync-vercel-env.ts",
+    "slug:migrate": "npx tsx scripts/normalize-slugs.ts"
   },
   "dependencies": {
     "firebase": "^12.15.0",

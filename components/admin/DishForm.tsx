@@ -6,19 +6,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Category, Dish } from "@/lib/types";
 import { PLACEHOLDER_DISH_IMAGE } from "@/lib/constants";
+import { slugify } from "@/lib/slugify";
 
 interface DishFormProps {
   categories: Category[];
   initial?: Dish;
-}
-
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
 }
 
 function linesToArray(value: string) {

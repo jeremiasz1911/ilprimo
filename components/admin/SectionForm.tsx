@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { PageSection, PageSectionType } from "@/lib/types";
+import { slugify } from "@/lib/slugify";
 
 const SECTION_TYPES: { value: PageSectionType; label: string }[] = [
   { value: "hero", label: "Hero" },
@@ -15,15 +16,6 @@ const SECTION_TYPES: { value: PageSectionType; label: string }[] = [
 
 interface SectionFormProps {
   initial?: PageSection;
-}
-
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
 }
 
 export default function SectionForm({ initial }: SectionFormProps) {

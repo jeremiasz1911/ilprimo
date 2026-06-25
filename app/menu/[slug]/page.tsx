@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import SiteHeader from "@/components/SiteHeader";
 import DishDetail from "@/components/DishDetail";
 import { getPublicDishBySlug } from "@/lib/menu-service";
+import { decodeSlugParam, slugify } from "@/lib/slugify";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -30,6 +31,13 @@ export default async function DishPage({ params }: PageProps) {
 
   if (!item) {
     notFound();
+  }
+
+  const canonicalSlug = slugify(item.slug);
+  const requestedSlug = decodeSlugParam(slug);
+
+  if (canonicalSlug && requestedSlug !== canonicalSlug && slug !== canonicalSlug) {
+    redirect(`/menu/${canonicalSlug}`);
   }
 
   return (
