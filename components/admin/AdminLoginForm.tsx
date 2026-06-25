@@ -7,6 +7,7 @@ export default function AdminLoginForm() {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [website, setWebsite] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -18,7 +19,7 @@ export default function AdminLoginForm() {
     const response = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username, password, website }),
     });
 
     setLoading(false);
@@ -35,6 +36,16 @@ export default function AdminLoginForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      <div className="hidden" aria-hidden="true">
+        <label className="mb-2 block text-sm text-stone-400">Strona</label>
+        <input
+          tabIndex={-1}
+          autoComplete="off"
+          value={website}
+          onChange={(e) => setWebsite(e.target.value)}
+          className="w-full border border-stone-700 bg-stone-900 px-4 py-3 text-white outline-none focus:border-amber-400"
+        />
+      </div>
       <div>
         <label className="mb-2 block text-sm text-stone-400">Login</label>
         <input
