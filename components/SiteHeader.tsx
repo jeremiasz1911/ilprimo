@@ -3,13 +3,15 @@ import {
   getNavigationLinks,
   getSiteSettings,
 } from "@/lib/page-service";
+import { getSiteTheme } from "@/lib/theme-service";
 
 export const dynamic = "force-dynamic";
 
 export default async function SiteHeader() {
-  const [navLinks, settings] = await Promise.all([
+  const [navLinks, settings, theme] = await Promise.all([
     getNavigationLinks(),
     getSiteSettings(),
+    getSiteTheme(),
   ]);
 
   return (
@@ -17,6 +19,7 @@ export default async function SiteHeader() {
       navLinks={navLinks}
       logo={settings.logo}
       logoAlt={settings.restaurantName}
+      mobileNavbarStyle={theme.mobileNavbarStyle}
     />
   );
 }

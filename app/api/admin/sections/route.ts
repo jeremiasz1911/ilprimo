@@ -6,9 +6,11 @@ import {
   getAllPageSections,
   updatePageSection,
 } from "@/lib/page-service";
+import { mapSectionLayout } from "@/lib/section-layout";
 import type { PageSectionType } from "@/lib/types";
 
 function parseSectionBody(body: Record<string, unknown>) {
+  const layout = mapSectionLayout(body);
   return {
     id: body.id as string | undefined,
     type: body.type as PageSectionType,
@@ -22,6 +24,7 @@ function parseSectionBody(body: Record<string, unknown>) {
     isActive: body.isActive !== false,
     showInNavigation: body.showInNavigation === true,
     navigationLabel: String(body.navigationLabel ?? ""),
+    ...layout,
   };
 }
 

@@ -3,7 +3,16 @@
 import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { PageSection, PageSectionType } from "@/lib/types";
+import type {
+  BackgroundType,
+  ContentWidth,
+  LayoutVariant,
+  PageSection,
+  PageSectionType,
+  SpacingSize,
+  TextAlign,
+} from "@/lib/types";
+import { getDefaultSectionLayout } from "@/lib/section-layout";
 import { slugify } from "@/lib/slugify";
 
 const SECTION_TYPES: { value: PageSectionType; label: string }[] = [
@@ -35,6 +44,40 @@ export default function SectionForm({ initial }: SectionFormProps) {
   );
   const [navigationLabel, setNavigationLabel] = useState(
     initial?.navigationLabel ?? "",
+  );
+  const defaults = getDefaultSectionLayout();
+  const [layoutVariant, setLayoutVariant] = useState<LayoutVariant>(
+    initial?.layoutVariant ?? defaults.layoutVariant,
+  );
+  const [backgroundType, setBackgroundType] = useState<BackgroundType>(
+    initial?.backgroundType ?? defaults.backgroundType,
+  );
+  const [backgroundColor, setBackgroundColor] = useState(
+    initial?.backgroundColor ?? "",
+  );
+  const [textAlign, setTextAlign] = useState<TextAlign>(
+    initial?.textAlign ?? defaults.textAlign,
+  );
+  const [imagePosition, setImagePosition] = useState<
+    "left" | "right" | "center"
+  >(initial?.imagePosition ?? defaults.imagePosition);
+  const [contentWidth, setContentWidth] = useState<ContentWidth>(
+    initial?.contentWidth ?? defaults.contentWidth,
+  );
+  const [paddingTop, setPaddingTop] = useState<SpacingSize>(
+    initial?.paddingTop ?? defaults.paddingTop,
+  );
+  const [paddingBottom, setPaddingBottom] = useState<SpacingSize>(
+    initial?.paddingBottom ?? defaults.paddingBottom,
+  );
+  const [isFullWidth, setIsFullWidth] = useState(
+    initial?.isFullWidth ?? defaults.isFullWidth,
+  );
+  const [hideOnMobile, setHideOnMobile] = useState(
+    initial?.hideOnMobile ?? defaults.hideOnMobile,
+  );
+  const [hideOnDesktop, setHideOnDesktop] = useState(
+    initial?.hideOnDesktop ?? defaults.hideOnDesktop,
   );
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -86,6 +129,17 @@ export default function SectionForm({ initial }: SectionFormProps) {
       isActive,
       showInNavigation,
       navigationLabel,
+      layoutVariant,
+      backgroundType,
+      backgroundColor,
+      textAlign,
+      imagePosition,
+      contentWidth,
+      paddingTop,
+      paddingBottom,
+      isFullWidth,
+      hideOnMobile,
+      hideOnDesktop,
     };
 
     const response = await fetch("/api/admin/sections", {
@@ -270,6 +324,178 @@ export default function SectionForm({ initial }: SectionFormProps) {
           />
           Pokaż w nawigacji
         </label>
+      </div>
+
+      <div className="border border-stone-800 p-5">
+        <h3 className="mb-4 text-sm tracking-[0.15em] text-amber-400 uppercase">
+          Układ sekcji
+        </h3>
+        <div className="grid gap-5 md:grid-cols-2">
+          <div>
+            <label className="mb-2 block text-sm text-stone-400">
+              Wariant układu
+            </label>
+            <select
+              value={layoutVariant}
+              onChange={(e) =>
+                setLayoutVariant(e.target.value as LayoutVariant)
+              }
+              className="w-full border border-stone-700 bg-stone-900 px-4 py-3 text-white outline-none focus:border-amber-400"
+            >
+              <option value="default">Domyślny</option>
+              <option value="image-left">Obraz po lewej</option>
+              <option value="image-right">Obraz po prawej</option>
+              <option value="centered">Wyśrodkowany</option>
+              <option value="split">Podział 50/50</option>
+              <option value="full-hero">Pełny hero</option>
+              <option value="simple-text">Prosty tekst</option>
+              <option value="gallery">Galeria</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-2 block text-sm text-stone-400">
+              Tło sekcji
+            </label>
+            <select
+              value={backgroundType}
+              onChange={(e) =>
+                setBackgroundType(e.target.value as BackgroundType)
+              }
+              className="w-full border border-stone-700 bg-stone-900 px-4 py-3 text-white outline-none focus:border-amber-400"
+            >
+              <option value="default">Domyślne (z motywu)</option>
+              <option value="color">Kolor własny</option>
+              <option value="image">Obraz</option>
+              <option value="dark">Ciemne</option>
+              <option value="light">Jasne</option>
+            </select>
+          </div>
+          {backgroundType === "color" && (
+            <div>
+              <label className="mb-2 block text-sm text-stone-400">
+                Kolor tła
+              </label>
+              <input
+                value={backgroundColor}
+                onChange={(e) => setBackgroundColor(e.target.value)}
+                placeholder="#111111"
+                className="w-full border border-stone-700 bg-stone-900 px-4 py-3 text-white outline-none focus:border-amber-400"
+              />
+            </div>
+          )}
+          <div>
+            <label className="mb-2 block text-sm text-stone-400">
+              Wyrównanie tekstu
+            </label>
+            <select
+              value={textAlign}
+              onChange={(e) => setTextAlign(e.target.value as TextAlign)}
+              className="w-full border border-stone-700 bg-stone-900 px-4 py-3 text-white outline-none focus:border-amber-400"
+            >
+              <option value="left">Lewo</option>
+              <option value="center">Środek</option>
+              <option value="right">Prawo</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-2 block text-sm text-stone-400">
+              Pozycja obrazu
+            </label>
+            <select
+              value={imagePosition}
+              onChange={(e) =>
+                setImagePosition(e.target.value as "left" | "right" | "center")
+              }
+              className="w-full border border-stone-700 bg-stone-900 px-4 py-3 text-white outline-none focus:border-amber-400"
+            >
+              <option value="left">Lewo</option>
+              <option value="center">Środek</option>
+              <option value="right">Prawo</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-2 block text-sm text-stone-400">
+              Szerokość treści
+            </label>
+            <select
+              value={contentWidth}
+              onChange={(e) =>
+                setContentWidth(e.target.value as ContentWidth)
+              }
+              className="w-full border border-stone-700 bg-stone-900 px-4 py-3 text-white outline-none focus:border-amber-400"
+            >
+              <option value="narrow">Wąska</option>
+              <option value="default">Domyślna</option>
+              <option value="wide">Szeroka</option>
+              <option value="full">Pełna</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-2 block text-sm text-stone-400">
+              Padding góra
+            </label>
+            <select
+              value={paddingTop}
+              onChange={(e) => setPaddingTop(e.target.value as SpacingSize)}
+              className="w-full border border-stone-700 bg-stone-900 px-4 py-3 text-white outline-none focus:border-amber-400"
+            >
+              <option value="compact">Kompaktowy</option>
+              <option value="small">Mały</option>
+              <option value="medium">Średni</option>
+              <option value="comfortable">Komfortowy</option>
+              <option value="large">Duży</option>
+              <option value="spacious">Przestronny</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-2 block text-sm text-stone-400">
+              Padding dół
+            </label>
+            <select
+              value={paddingBottom}
+              onChange={(e) =>
+                setPaddingBottom(e.target.value as SpacingSize)
+              }
+              className="w-full border border-stone-700 bg-stone-900 px-4 py-3 text-white outline-none focus:border-amber-400"
+            >
+              <option value="compact">Kompaktowy</option>
+              <option value="small">Mały</option>
+              <option value="medium">Średni</option>
+              <option value="comfortable">Komfortowy</option>
+              <option value="large">Duży</option>
+              <option value="spacious">Przestronny</option>
+            </select>
+          </div>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-6">
+          <label className="flex items-center gap-2 text-sm text-stone-300">
+            <input
+              type="checkbox"
+              checked={isFullWidth}
+              onChange={(e) => setIsFullWidth(e.target.checked)}
+              className="accent-amber-400"
+            />
+            Pełna szerokość
+          </label>
+          <label className="flex items-center gap-2 text-sm text-stone-300">
+            <input
+              type="checkbox"
+              checked={hideOnMobile}
+              onChange={(e) => setHideOnMobile(e.target.checked)}
+              className="accent-amber-400"
+            />
+            Ukryj na mobile
+          </label>
+          <label className="flex items-center gap-2 text-sm text-stone-300">
+            <input
+              type="checkbox"
+              checked={hideOnDesktop}
+              onChange={(e) => setHideOnDesktop(e.target.checked)}
+              className="accent-amber-400"
+            />
+            Ukryj na desktop
+          </label>
+        </div>
       </div>
 
       {error && <p className="text-sm text-red-400">{error}</p>}

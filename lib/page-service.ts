@@ -1,6 +1,7 @@
 import type { DocumentData } from "firebase-admin/firestore";
 import { getAdminDb } from "@/lib/firebase-admin";
 import { DEFAULT_LOGO } from "@/lib/constants";
+import { getDefaultSectionLayout, mapSectionLayout } from "@/lib/section-layout";
 import type { NavLink, PageSection, PageSectionType, SiteSettings } from "@/lib/types";
 
 const PAGE_SECTIONS_COLLECTION = "pageSections";
@@ -18,6 +19,8 @@ const DEFAULT_SITE_SETTINGS: SiteSettings = {
   copyrightText: "© 2026 IL PRIMO",
 };
 
+const SECTION_LAYOUT_DEFAULTS = getDefaultSectionLayout();
+
 const DEFAULT_PAGE_SECTIONS: Omit<PageSection, "id">[] = [
   {
     type: "hero",
@@ -32,6 +35,7 @@ const DEFAULT_PAGE_SECTIONS: Omit<PageSection, "id">[] = [
     isActive: true,
     showInNavigation: true,
     navigationLabel: "STRONA GŁÓWNA",
+    ...SECTION_LAYOUT_DEFAULTS,
   },
   {
     type: "about",
@@ -46,6 +50,8 @@ const DEFAULT_PAGE_SECTIONS: Omit<PageSection, "id">[] = [
     isActive: true,
     showInNavigation: true,
     navigationLabel: "O NAS",
+    ...SECTION_LAYOUT_DEFAULTS,
+    layoutVariant: "image-left",
   },
   {
     type: "menu",
@@ -60,6 +66,8 @@ const DEFAULT_PAGE_SECTIONS: Omit<PageSection, "id">[] = [
     isActive: true,
     showInNavigation: true,
     navigationLabel: "MENU",
+    ...SECTION_LAYOUT_DEFAULTS,
+    backgroundType: "dark",
   },
   {
     type: "contact",
@@ -73,6 +81,8 @@ const DEFAULT_PAGE_SECTIONS: Omit<PageSection, "id">[] = [
     isActive: true,
     showInNavigation: true,
     navigationLabel: "KONTAKT",
+    ...SECTION_LAYOUT_DEFAULTS,
+    backgroundType: "dark",
   },
 ];
 
@@ -92,6 +102,7 @@ function mapSectionDoc(id: string, data: DocumentData): PageSection {
     isActive: data.isActive !== false,
     showInNavigation: data.showInNavigation === true,
     navigationLabel: data.navigationLabel ?? "",
+    ...mapSectionLayout(data as Record<string, unknown>),
   };
 }
 
@@ -184,6 +195,17 @@ export async function createPageSection(
     isActive: data.isActive !== false,
     showInNavigation: data.showInNavigation === true,
     navigationLabel: data.navigationLabel,
+    layoutVariant: data.layoutVariant,
+    backgroundType: data.backgroundType,
+    backgroundColor: data.backgroundColor,
+    textAlign: data.textAlign,
+    imagePosition: data.imagePosition,
+    contentWidth: data.contentWidth,
+    paddingTop: data.paddingTop,
+    paddingBottom: data.paddingBottom,
+    isFullWidth: data.isFullWidth,
+    hideOnMobile: data.hideOnMobile,
+    hideOnDesktop: data.hideOnDesktop,
   };
   await getAdminDb().collection(PAGE_SECTIONS_COLLECTION).doc(id).set(payload);
   return { id, ...payload };

@@ -3,7 +3,14 @@
 import Image from "next/image";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
+import ThemeButton from "@/components/ThemeButton";
+import { useSiteTheme } from "@/components/ThemeProvider";
 import { splitHeroContent } from "@/lib/content-utils";
+import {
+  getSectionTextAlignClass,
+  getSectionVisibilityClass,
+} from "@/lib/section-layout";
+import { getAnimationMultiplier, shouldUseAnimations } from "@/lib/theme-css";
 import type { PageSection } from "@/lib/types";
 
 const textVariants = {
@@ -19,15 +26,23 @@ const textVariants = {
   }),
 };
 
-function useParallaxEnabled() {
-  const [enabled, setEnabled] = useState(false);
+interface HeroProps {
+  section: PageSection;
+}
+
+export default function Hero({ section }: HeroProps) {
+  const theme = useSiteTheme();
+  const sectionRef = useRef<HTMLElement>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
 
   useEffect(() => {
     const mobileQuery = window.matchMedia("(max-width: 767px)");
     const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     const update = () => {
-      setEnabled(!mobileQuery.matches && !motionQuery.matches);
+      setIsMobile(mobileQuery.matches);
+      setReducedMotion(motionQuery.matches);
     };
 
     update();
@@ -40,16 +55,14 @@ function useParallaxEnabled() {
     };
   }, []);
 
-  return enabled;
-}
+  const animationsOn =
+    shouldUseAnimations(theme, isMobile) && getAnimationMultiplier(theme) > 0;
+  const parallaxEnabled =
+    theme.enableParallax &&
+    shouldUseAnimations(theme, isMobile) &&
+    !isMobile &&
+    !reducedMotion;
 
-interface HeroProps {
-  section: PageSection;
-}
-
-export default function Hero({ section }: HeroProps) {
-  const sectionRef = useRef<HTMLElement>(null);
-  const parallaxEnabled = useParallaxEnabled();
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start start", "end start"],
@@ -59,22 +72,39 @@ export default function Hero({ section }: HeroProps) {
   const imageScale = useTransform(scrollYProgress, [0, 1], [1, 1.06]);
   const { tagline, description } = splitHeroContent(section.content);
 
+  const imageClass =
+    theme.imageStyle === "cinematic"
+      ? "object-cover brightness-90 contrast-105"
+      : theme.imageStyle === "bright"
+        ? "object-cover brightness-105"
+        : "object-cover";
+
   const image = section.image ? (
     <Image
       src={section.image}
       alt={section.title}
       fill
       priority
-      className="object-cover"
+      className={imageClass}
       sizes="100vw"
     />
   ) : null;
+
+  const anim = (index: number) =>
+    animationsOn
+      ? {
+          custom: index,
+          initial: "hidden" as const,
+          animate: "visible" as const,
+          variants: textVariants,
+        }
+      : {};
 
   return (
     <section
       ref={sectionRef}
       id={section.id}
-      className="relative flex min-h-[100svh] items-center justify-center overflow-hidden pt-16 sm:pt-20 md:min-h-[100dvh]"
+      className={`relative flex min-h-[100svh] items-center justify-center overflow-hidden pt-16 sm:pt-20 md:min-h-[100dvh] ${getSectionVisibilityClass(section)} ${getSectionTextAlignClass(section)}`}
     >
       {parallaxEnabled ? (
         <motion.div
@@ -96,69 +126,87 @@ export default function Hero({ section }: HeroProps) {
         </div>
       )}
 
-      <div className="absolute inset-0 bg-black/60" />
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundColor:
+            "color-mix(in srgb, var(--theme-primary) 60%, transparent)",
+        }}
+      />
 
-      <div className="relative z-10 w-full max-w-4xl px-4 text-center text-white sm:px-6">
-        {section.subtitle && (
-          <motion.p
-            custom={0}
-            initial="hidden"
-            animate="visible"
-            variants={textVariants}
-            className="mb-3 text-xs tracking-[0.25em] text-amber-400 uppercase sm:mb-4 sm:text-sm sm:tracking-[0.4em] md:text-base"
-          >
-            {section.subtitle}
-          </motion.p>
-        )}
-        {section.title && (
-          <motion.h1
-            custom={1}
-            initial="hidden"
-            animate="visible"
-            variants={textVariants}
-            className="font-serif text-4xl tracking-[0.1em] uppercase sm:text-5xl sm:tracking-[0.15em] md:text-7xl lg:text-8xl"
-          >
-            {section.title}
-          </motion.h1>
-        )}
-        {tagline && (
-          <motion.p
-            custom={2}
-            initial="hidden"
-            animate="visible"
-            variants={textVariants}
-            className="mt-3 text-sm tracking-[0.2em] text-white/90 uppercase sm:mt-4 sm:text-lg sm:tracking-[0.35em] md:text-xl"
-          >
-            {tagline}
-          </motion.p>
-        )}
-        {description && (
-          <motion.p
-            custom={3}
-            initial="hidden"
-            animate="visible"
-            variants={textVariants}
-            className="mx-auto mt-6 max-w-xl text-sm leading-relaxed text-white/80 sm:mt-8 sm:text-base md:text-lg"
-          >
-            {description}
-          </motion.p>
-        )}
-        {section.buttonText && section.buttonLink && (
-          <motion.div
-            custom={4}
-            initial="hidden"
-            animate="visible"
-            variants={textVariants}
-            className="mt-8 sm:mt-10"
-          >
-            <a
-              href={section.buttonLink}
-              className="btn-premium inline-block w-full max-w-xs sm:w-auto"
+      <div className="relative z-10 w-full max-w-4xl px-4 sm:px-6">
+        {section.subtitle &&
+          (animationsOn ? (
+            <motion.p
+              {...anim(0)}
+              className="theme-accent mb-3 text-xs tracking-[0.25em] uppercase sm:mb-4 sm:text-sm sm:tracking-[0.4em] md:text-base"
             >
-              {section.buttonText}
-            </a>
-          </motion.div>
-        )}
+              {section.subtitle}
+            </motion.p>
+          ) : (
+            <p className="theme-accent mb-3 text-xs tracking-[0.25em] uppercase sm:mb-4 sm:text-sm sm:tracking-[0.4em] md:text-base">
+              {section.subtitle}
+            </p>
+          ))}
+        {section.title &&
+          (animationsOn ? (
+            <motion.h1
+              {...anim(1)}
+              className="theme-heading text-4xl tracking-[0.1em] uppercase sm:text-5xl sm:tracking-[0.15em] md:text-7xl lg:text-8xl"
+            >
+              {section.title}
+            </motion.h1>
+          ) : (
+            <h1 className="theme-heading text-4xl tracking-[0.1em] uppercase sm:text-5xl sm:tracking-[0.15em] md:text-7xl lg:text-8xl">
+              {section.title}
+            </h1>
+          ))}
+        {tagline &&
+          (animationsOn ? (
+            <motion.p
+              {...anim(2)}
+              className="theme-muted mt-3 text-sm tracking-[0.2em] uppercase sm:mt-4 sm:text-lg sm:tracking-[0.35em] md:text-xl"
+            >
+              {tagline}
+            </motion.p>
+          ) : (
+            <p className="theme-muted mt-3 text-sm tracking-[0.2em] uppercase sm:mt-4 sm:text-lg sm:tracking-[0.35em] md:text-xl">
+              {tagline}
+            </p>
+          ))}
+        {description &&
+          (animationsOn ? (
+            <motion.p
+              {...anim(3)}
+              className="theme-muted mx-auto mt-6 max-w-xl text-sm leading-relaxed sm:mt-8 sm:text-base md:text-lg"
+            >
+              {description}
+            </motion.p>
+          ) : (
+            <p className="theme-muted mx-auto mt-6 max-w-xl text-sm leading-relaxed sm:mt-8 sm:text-base md:text-lg">
+              {description}
+            </p>
+          ))}
+        {section.buttonText && section.buttonLink &&
+          (animationsOn ? (
+            <motion.div {...anim(4)} className="mt-8 sm:mt-10">
+              <ThemeButton
+                href={section.buttonLink}
+                className="w-full max-w-xs sm:w-auto"
+              >
+                {section.buttonText}
+              </ThemeButton>
+            </motion.div>
+          ) : (
+            <div className="mt-8 sm:mt-10">
+              <ThemeButton
+                href={section.buttonLink}
+                className="w-full max-w-xs sm:w-auto"
+              >
+                {section.buttonText}
+              </ThemeButton>
+            </div>
+          ))}
       </div>
     </section>
   );

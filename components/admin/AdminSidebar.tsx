@@ -7,9 +7,11 @@ import LogoutButton from "@/components/admin/LogoutButton";
 const links = [
   { href: "/admin", label: "START" },
   { href: "/admin/sections", label: "SEKCJE STRONY" },
+  { href: "/admin/appearance", label: "WYGLĄD STRONY" },
   { href: "/admin/categories", label: "KATEGORIE MENU" },
   { href: "/admin/dishes", label: "DANIA" },
   { href: "/admin/settings", label: "USTAWIENIA" },
+  { href: "/admin/backup", label: "BACKUP" },
 ];
 
 export default function AdminSidebar() {

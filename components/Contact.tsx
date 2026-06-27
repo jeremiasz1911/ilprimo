@@ -1,6 +1,11 @@
-import { splitParagraphs } from "@/lib/content-utils";
-import type { PageSection, SiteSettings } from "@/lib/types";
 import ScrollReveal from "@/components/ScrollReveal";
+import { splitParagraphs } from "@/lib/content-utils";
+import {
+  getSectionPaddingClass,
+  getSectionTextAlignClass,
+  getSectionVisibilityClass,
+} from "@/lib/section-layout";
+import type { PageSection, SiteSettings } from "@/lib/types";
 
 interface ContactProps {
   section: PageSection;
@@ -16,29 +21,32 @@ export default function Contact({ section, settings }: ContactProps) {
   const footerParagraphs = splitParagraphs(settings.footerText);
 
   return (
-    <footer id={section.id} className="bg-black py-12 text-white sm:py-16">
-      <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
+    <footer
+      id={section.id}
+      className={`theme-footer ${getSectionVisibilityClass(section)} ${getSectionPaddingClass(section)} ${getSectionTextAlignClass(section)} py-12 sm:py-16`}
+    >
+      <div className="theme-container mx-auto px-4 sm:px-6 lg:px-8">
         <ScrollReveal>
           {(section.subtitle || section.title) && (
             <div className="mb-8">
               {section.subtitle && (
-                <p className="text-xs tracking-[0.25em] text-amber-400 uppercase sm:text-sm">
+                <p className="theme-accent text-xs tracking-[0.25em] uppercase sm:text-sm">
                   {section.subtitle}
                 </p>
               )}
               {section.title && (
-                <h2 className="mt-3 font-serif text-xl tracking-[0.15em] uppercase sm:text-2xl sm:tracking-[0.2em] md:text-3xl">
+                <h2 className="theme-heading mt-3 text-xl tracking-[0.15em] uppercase sm:text-2xl sm:tracking-[0.2em] md:text-3xl">
                   {section.title}
                 </h2>
               )}
             </div>
           )}
 
-          <h2 className="font-serif text-xl tracking-[0.15em] uppercase sm:text-2xl sm:tracking-[0.2em] md:text-3xl">
+          <h2 className="theme-heading text-xl tracking-[0.15em] uppercase sm:text-2xl sm:tracking-[0.2em] md:text-3xl">
             {settings.restaurantName}
           </h2>
 
-          <div className="mt-8 space-y-3 text-stone-400 sm:mt-10 sm:space-y-4">
+          <div className="theme-muted mt-8 space-y-3 sm:mt-10 sm:space-y-4">
             {settings.address && (
               <p className="text-sm leading-relaxed sm:text-base md:text-lg">
                 {settings.address.split(",").map((part, index, parts) => (
@@ -58,7 +66,7 @@ export default function Contact({ section, settings }: ContactProps) {
               <p>
                 <a
                   href={`tel:${formatPhoneHref(settings.phone)}`}
-                  className="text-base text-amber-400 transition-all duration-500 hover:text-amber-300 hover:drop-shadow-[0_0_12px_rgba(251,191,36,0.35)] sm:text-lg md:text-xl"
+                  className="theme-accent text-base transition-all duration-500 hover:opacity-80 sm:text-lg md:text-xl"
                 >
                   {settings.phone}
                 </a>
@@ -68,7 +76,7 @@ export default function Contact({ section, settings }: ContactProps) {
               <p>
                 <a
                   href={`mailto:${settings.email}`}
-                  className="text-sm text-stone-300 transition-colors hover:text-amber-400 sm:text-base"
+                  className="theme-muted text-sm transition-colors hover:text-[var(--theme-accent)] sm:text-base"
                 >
                   {settings.email}
                 </a>
@@ -83,7 +91,7 @@ export default function Contact({ section, settings }: ContactProps) {
                   href={settings.facebookUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm tracking-[0.15em] text-stone-400 uppercase transition-colors hover:text-amber-400"
+                  className="theme-muted text-sm tracking-[0.15em] uppercase transition-colors hover:text-[var(--theme-accent)]"
                 >
                   Facebook
                 </a>
@@ -93,7 +101,7 @@ export default function Contact({ section, settings }: ContactProps) {
                   href={settings.instagramUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm tracking-[0.15em] text-stone-400 uppercase transition-colors hover:text-amber-400"
+                  className="theme-muted text-sm tracking-[0.15em] uppercase transition-colors hover:text-[var(--theme-accent)]"
                 >
                   Instagram
                 </a>
@@ -102,16 +110,19 @@ export default function Contact({ section, settings }: ContactProps) {
           )}
 
           {footerParagraphs.length > 0 && (
-            <div className="mx-auto mt-8 max-w-2xl space-y-3 text-sm text-stone-500">
+            <div className="theme-muted mx-auto mt-8 max-w-2xl space-y-3 text-sm">
               {footerParagraphs.map((paragraph) => (
                 <p key={paragraph.slice(0, 32)}>{paragraph}</p>
               ))}
             </div>
           )}
 
-          <div className="mt-10 border-t border-stone-800 pt-6 sm:mt-12 sm:pt-8">
+          <div
+            className="mt-10 border-t pt-6 sm:mt-12 sm:pt-8"
+            style={{ borderColor: "var(--theme-border)" }}
+          >
             {settings.copyrightText && (
-              <p className="text-xs text-stone-500 sm:text-sm">
+              <p className="theme-muted text-xs sm:text-sm">
                 {settings.copyrightText}
               </p>
             )}
